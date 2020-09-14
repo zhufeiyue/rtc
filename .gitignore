@@ -1,0 +1,15 @@
+Debug*
+Release*
+GeneratedFiles*
+.vs/*
+ipch/*
+*.obj
+*.tlog
+*.user
+*.sdf
+*.suo
+*.opensdf
+*.vc.db
+*.aps
+*.opendb
+
