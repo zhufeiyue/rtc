@@ -30,3 +30,15 @@ protected:
 	INT64 m_iSampleTime = 0;
 	INT64 m_iInputSampleCount = 0;
 };
+
+class MFAACEncoder
+{
+public:
+	MFAACEncoder();
+	~MFAACEncoder();
+
+	void SetFrameSize(int, int, int);
+	int Init();
+	int Destroy();
+	int ProcessInput(uint8_t* [], int);
+};

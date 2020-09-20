@@ -48,6 +48,12 @@
     <ClCompile Include="MFCodecWrap.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="MFDevice.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MFCapture.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WinCapture.h">
@@ -75,6 +81,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="MFCodecWrap.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MFDevice.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MFCapture.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -148,7 +148,9 @@
     <ClCompile Include="ICaptureWorker.cpp" />
     <ClCompile Include="IEncoder.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MFCapture.cpp" />
     <ClCompile Include="MFCodecWrap.cpp" />
+    <ClCompile Include="MFDevice.cpp" />
     <ClCompile Include="SimpleLog.cpp" />
     <ClCompile Include="WinCapture.cpp" />
     <ClCompile Include="X264Wrap.cpp" />
@@ -160,7 +162,9 @@
     <ClInclude Include="ICaptureWoker.h" />
     <ClInclude Include="IEncoder.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="MFCapture.h" />
     <ClInclude Include="MFCodecWrap.h" />
+    <ClInclude Include="MFDevice.h" />
     <ClInclude Include="WinCapture.h" />
     <ClInclude Include="X264Wrap.h" />
   </ItemGroup>
