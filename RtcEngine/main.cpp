@@ -90,6 +90,7 @@ void test1()
 	ec.frameRate = vcc.frameRate;
 	ec.frameFormat = vcc.frameFormat;
 	auto pH264Encoder = new H264Encoder<FrameQueue, X264Wrap>();
+	//auto pH264Encoder = new H264Encoder<FrameQueue, MFH264Encoder>();
 	pH264Encoder->SetEncoderConfig(ec);
 	pH264Encoder->SetFrameQueue(pWork->GetFrameQueue());
 	pH264Encoder->SetEncoder(pX264);
@@ -115,6 +116,8 @@ void test2()
 	pCapture->StartCapture(pDevice->GetDeviceActivate(0), streamIndex, mediaIndex);
 
 	std::this_thread::sleep_for(std::chrono::seconds(30));
+	pCapture->EndCapture();
+	delete pCapture;
 }
 
 int __stdcall WinMain(HINSTANCE hInstance,

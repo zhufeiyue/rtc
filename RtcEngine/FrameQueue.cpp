@@ -1,5 +1,4 @@
 #include "FrameQueue.h"
-#include <Windows.h>
 
 FrameQueue::~FrameQueue()
 {
@@ -32,6 +31,7 @@ FrameQueue::Frame* FrameQueue::PopEmptyFrame(int w, int h, int size)
 			pFrame->height = h;
 			pFrame->width = w;
 			pFrame->pData = new unsigned char[size];
+			//LOG() << "alloce new frame";
 		}
 		catch (...)
 		{
@@ -40,7 +40,10 @@ FrameQueue::Frame* FrameQueue::PopEmptyFrame(int w, int h, int size)
 			return NULL;
 		}
 	}
+
+#ifdef _WIN32
 	pFrame->timestamp = GetTickCount64();
+#endif
 
 	return pFrame;
 }

@@ -4,6 +4,7 @@
 #include <Wmcodecdsp.h>
 #include <propvarutil.h>
 #include <shlwapi.h>
+#include "MFCodecWrap.h"
 
 HRESULT LogMediaType(IMFMediaType* pType);
 #define ResampleOutputRate 44100
@@ -17,9 +18,31 @@ MFCaptureAudio::MFCaptureAudio()
 MFCaptureAudio::~MFCaptureAudio()
 {
     if (m_pAudoSampleTransform)
+    {
         m_pAudoSampleTransform->Release();
+        m_pAudoSampleTransform = NULL;
+    }
     if (m_resamleOutData.pSample)
+    {
         m_resamleOutData.pSample->Release();
+        m_resamleOutData.pSample = NULL;
+    }
+    if (m_pReader)
+    {
+        m_pReader->Release();
+        m_pReader = NULL;
+    }
+    if (m_pSource)
+    {
+        m_pSource->Release();
+        m_pSource = NULL;
+    }
+    if (m_pAACEncoder)
+    {
+        m_pAACEncoder->Destroy();
+        delete m_pAACEncoder;
+        m_pAACEncoder = NULL;
+    }
 }
 
 HRESULT MFCaptureAudio::QueryInterface(REFIID iid, void** ppv)
@@ -58,30 +81,40 @@ HRESULT MFCaptureAudio::OnReadSample(
     HRESULT hr;
     DWORD len(0);
     DWORD dwStatus(0);
-    if (pSample)
+    if (!pSample)
     {
-        if (m_pAudoSampleTransform)
+        goto End;
+    }
+
+    if (m_pAudoSampleTransform)
+    {
+        hr = m_pAudoSampleTransform->ProcessInput(0, pSample, 0);
+        if (SUCCEEDED(hr))
         {
-            hr = m_pAudoSampleTransform->ProcessInput(0, pSample, 0);
+            hr = m_pAudoSampleTransform->ProcessOutput(0, 1, &m_resamleOutData, &dwStatus);
             if (SUCCEEDED(hr))
             {
-                hr = m_pAudoSampleTransform->ProcessOutput(0, 1, &m_resamleOutData, &dwStatus);
-                if (SUCCEEDED(hr))
-                {
-                    if (m_resamleOutData.pEvents)
-                        m_resamleOutData.pEvents->Release();
-                    m_resamleOutData.pSample->GetTotalLength(&len);
-                }
-                else if (MF_E_TRANSFORM_STREAM_CHANGE == hr)
-                    LOG() << "MF_E_TRANSFORM_STREAM_CHANGE";
-                else
-                    LOG() << hr;
+                if (m_resamleOutData.pEvents)
+                    m_resamleOutData.pEvents->Release();
+                pSample = m_resamleOutData.pSample;
             }
+            else if (MF_E_TRANSFORM_STREAM_CHANGE == hr)
+                LOG() << "MF_E_TRANSFORM_STREAM_CHANGE";
+            else
+                LOG() << hr;
         }
     }
+
+    if (m_pAACEncoder)
+    {
+        m_pAACEncoder->ProcessInput(pSample);
+    }
+
 End:
     if (m_bCapture && m_pReader)
         hr = m_pReader->ReadSample(m_dwStreamIndex, 0, NULL, NULL, NULL, NULL);
+    else
+        m_waitReadEnd.set_value(true);
     return S_OK;
 }
 
@@ -115,8 +148,10 @@ HRESULT MFCaptureAudio::OnFlush(DWORD)
 
 int MFCaptureAudio::StartCapture(IMFActivate* pActivate, size_t streamIndex, size_t mediaIndex)
 {
+    LOG() << __FUNCTION__;
     if (!pActivate)
     {
+        LOG() << "!pActivate";
         return CodeFalse;
     }
 
@@ -141,6 +176,7 @@ int MFCaptureAudio::StartCapture(IMFActivate* pActivate, size_t streamIndex, siz
 
     m_dwStreamIndex = streamIndex;
     m_dwMediaIndex = mediaIndex;
+    m_bCapture = TRUE;
     if (CodeOK != ConfigureAudioSource(pSource, streamIndex, mediaIndex) || 
         CodeOK != OpenMediaAudioSource(pSource))
     {
@@ -153,12 +189,40 @@ int MFCaptureAudio::StartCapture(IMFActivate* pActivate, size_t streamIndex, siz
 
 int MFCaptureAudio::EndCapture()
 {
+    if (!m_bCapture)
+    {
+        return CodeFalse;
+    }
+
     m_bCapture = FALSE;
+    try 
+    {
+        if (m_pReader)
+        {
+            auto fu = m_waitReadEnd.get_future();
+            fu.get();
+            auto temp = decltype(m_waitReadEnd)();
+            m_waitReadEnd.swap(temp);
+        }
+    }
+    catch (std::future_error& e)
+    {
+        LOG() << e.what();
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
+    if (m_pAACEncoder)
+    {
+        m_pAACEncoder->Destroy();
+        delete m_pAACEncoder;
+        m_pAACEncoder = NULL;
+    }
     return CodeOK;
 }
 
 int MFCaptureAudio::ConfigureAudioSource(IMFMediaSource* pSource, size_t streamIndex, size_t mediaIndex)
 {
+    LOG() << __FUNCTION__;
     HRESULT hr = S_FALSE;
     IMFPresentationDescriptor* pPD = NULL;
     IMFStreamDescriptor* pSD = NULL;
@@ -282,6 +346,15 @@ int MFCaptureAudio::ConfigureAudioSource(IMFMediaSource* pSource, size_t streamI
                 if (pOutType)
                     pOutType->Release();
             }
+            m_iCaptureSampleBits = ResampleOutputBits;
+            m_iCaptureSampleChannel = ResampleOutputChannel;
+            m_iCaptureSampleRate = ResampleOutputRate;
+        }
+        else
+        {
+            m_iCaptureSampleBits = audioSampleBits;
+            m_iCaptureSampleChannel = audioChannelNum;
+            m_iCaptureSampleRate = audioSampleRate;
         }
     }
 
@@ -301,9 +374,18 @@ int MFCaptureAudio::ConfigureAudioSource(IMFMediaSource* pSource, size_t streamI
 
 int MFCaptureAudio::OpenMediaAudioSource(IMFMediaSource* pSource)
 {
+    LOG() << __FUNCTION__;
     HRESULT hr;
     IMFAttributes* pAttribute = NULL;
     hr = MFCreateAttributes(&pAttribute, 1);
+
+    m_pAACEncoder = new MFAACEncoder();
+    m_pAACEncoder->SetInputSampleInfo(m_iCaptureSampleRate, m_iCaptureSampleChannel, m_iCaptureSampleBits);
+    if (CodeOK != m_pAACEncoder->Init())
+    {
+        delete m_pAACEncoder;
+        m_pAACEncoder = NULL;
+    }
 
     if (SUCCEEDED(hr))
     {

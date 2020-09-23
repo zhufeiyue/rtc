@@ -50,7 +50,12 @@ HRESULT MFDevice::EnumDevice(IID type)
 	hr = MFEnumDeviceSources(m_pAttributes, &m_ppDevices, &m_iDeviceCount);
 	if (FAILED(hr))
 	{
+		LOG() << "MFEnumDeviceSources fail " << std::hex << hr << std::dec;
 		goto Done;
+	}
+	else
+	{
+		LOG() << "device num is " << m_iDeviceCount;
 	}
 
 	m_vDevicesInfo.clear();

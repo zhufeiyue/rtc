@@ -459,7 +459,7 @@ int MFH264Encoder::Init()
 		hr = MFSetAttributeSize(pOutType, MF_MT_FRAME_SIZE, m_iWidth, m_iHeight);
 		hr = pOutType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
 		//hr = pOutType->SetUINT32(MF_MT_VIDEO_NOMINAL_RANGE, MFNominalRange_Normal);
-		hr = pOutType->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_Main);
+		hr = pOutType->SetUINT32(MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_Base);
 	}
 	if (SUCCEEDED(hr))
 	{
@@ -516,6 +516,7 @@ int MFH264Encoder::Init()
 		hr = m_pEncoder->GetOutputStreamInfo(dwOutID, &m_streamInfoOut);
 		if (m_streamInfoOut.dwFlags & MFT_OUTPUT_STREAM_PROVIDES_SAMPLES)
 		{
+			LOG() << "MFT_OUTPUT_STREAM_PROVIDES_SAMPLES h264 encoder";
 			m_dataOut.pSample = NULL;
 		}
 		else
@@ -629,6 +630,11 @@ int MFH264Encoder::ProcessInput(uint8_t* yuv[], int)
 	if (SUCCEEDED(hr))
 	{
 		hr = m_pEncoder->ProcessOutput(0, 1, &m_dataOut, &dwStatus);
+		if (m_dataOut.pEvents)
+		{
+			m_dataOut.pEvents->Release();
+			m_dataOut.pEvents = NULL;
+		}
 	}
 
 	if (SUCCEEDED(hr))
@@ -650,6 +656,304 @@ int MFH264Encoder::ProcessInput(uint8_t* yuv[], int)
 
 	if (pBuffer)
 		pBuffer->Release();
+
+	return CodeOK;
+}
+
+
+int ParseSampleRateByIndex(int iii)
+{
+	int res;
+	switch (iii)
+	{
+	case 0:
+		res = 96000;
+		break;
+	case 1:
+		res = 88200;
+		break;
+	case 2:
+		res = 64000;
+		break;
+	case 3:
+		res = 48000;
+		break;
+	case 4:
+		res = 44100;
+		break;
+	case 5:
+		res = 32000;
+		break;
+	case 6:
+		res = 24000;
+		break;
+	case 7:
+		res = 22025;
+		break;
+	case 0x8:
+		res = 16000;
+		break;
+	case 0x9:
+		res = 12000;
+		break;
+	case 0xa:
+		res = 11025;
+		break;
+	case 0xb:
+		res = 8000;
+		break;
+	case 0xc:
+		res = 7350;
+		break;
+	default:
+		std::logic_error("unsupport samplerate");
+		break;
+	}
+
+	return res;
+}
+
+void MFAACEncoder::ParseAudioSpecificConfig(AudioSpecificConfig& aac_head, const unsigned char* a, int len)
+{
+	unsigned char temp1, temp2, temp3;
+	aac_head.aac_seq_head_audioObjectType = (a[0] & 0xf8) >> 3;
+	aac_head.aac_seq_head_audioObjectType -= 1;
+	aac_head.aac_seq_head_samplingFrequencyIndex = ((a[0] & 0x07) << 1) + ((a[1] & 0x80) >> 7);
+	if (aac_head.aac_seq_head_samplingFrequencyIndex == 0xf)
+	{
+		temp1 = ((a[1] & 0x7f) << 1) | ((a[2] & 0x80) >> 7);
+		temp2 = ((a[2] & 0x7f) << 1) | ((a[3] & 0x80) >> 7);
+		temp3 = ((a[3] & 0x7f) << 1) | ((a[4] & 0x80) >> 7);
+		aac_head.aac_seq_head_samplingFrequency = (temp1 << 16) | (temp2 << 8) | temp3;
+		aac_head.aac_seq_head_channelConfiguration = (a[4] & 0x78) >> 3;
+	}
+	else
+	{
+		aac_head.aac_seq_head_channelConfiguration = (a[1] & 0x78) >> 3;
+		aac_head.aac_seq_head_samplingFrequency = ParseSampleRateByIndex(aac_head.aac_seq_head_samplingFrequencyIndex);
+	}
+}
+
+void MFAACEncoder::CreateAACADTSHeader(unsigned char* p, const AudioSpecificConfig& asc, int aacDataLen)
+{
+	memset(p, 0, 7); // adts header 7 bytes
+	/*
+	syncword			12  ; all bits 1
+	ID					1   ; 0 mpeg4,1 mpeg2
+	layer				2   ; all bits 0
+	protection_absent	1   ; 1
+	// 2 bytes
+	profile             2   ;
+	sampling_freq_inex  4
+	private_bit         1
+	channel_configura   3
+	original_copy       1
+	home                1
+
+	copyright_bit       1
+	copyright_start     1
+	aac_frame_length    13  ; size ,include ADTS head size
+	adts_buffer_fullness 11
+	number_of_data_blocks 2
+	*/
+
+	unsigned int len = 7 + aacDataLen;
+	p[0] = 0xff;
+	p[1] = 0xf1;
+	p[2] |= (asc.aac_seq_head_audioObjectType << 6);
+	p[2] |= (asc.aac_seq_head_samplingFrequencyIndex << 2);
+	p[2] |= (asc.aac_seq_head_channelConfiguration >> 2);
+	p[3] |= (asc.aac_seq_head_channelConfiguration << 6);
+	p[3] |= ((len & 0x1800) >> 11);
+	p[4] = (len & 0x7f8) >> 3;
+	p[5] = (len & 0x7) << 5;
+	p[5] |= 0x1f;
+	p[6] |= 0xfc;
+}
+
+MFAACEncoder::MFAACEncoder()
+{
+}
+
+MFAACEncoder::~MFAACEncoder()
+{
+	if (m_dataOut.pSample)
+	{
+		m_dataOut.pSample->Release();
+		m_dataOut.pSample = NULL;
+	}
+	if (m_pEncoder)
+	{
+		m_pEncoder->Release();
+		m_pEncoder = NULL;
+	}
+}
+
+void MFAACEncoder::SetInputSampleInfo(int fr, int channel, int bits)
+{
+	m_iInputSampleBits = bits;
+	m_iInputSampleChannel = channel;
+	m_iInputSampleRate = fr;
+}
+
+int MFAACEncoder::Init()
+{
+	HRESULT hr;
+	DWORD dwInID(0), dwOutID(0);
+	hr = CoCreateInstance(CLSID_AACMFTEncoder, NULL, CLSCTX_INPROC_SERVER, IID_IMFTransform, (void**)&m_pEncoder);
+	if (FAILED(hr))
+	{
+		return CodeFalse;
+	}
+	hr = m_pEncoder->GetStreamIDs(1, &dwInID, 1, &dwOutID); // 未实现此接口，H264 Encoder也一样。in stream id和out stream id 都是0
+
+	IMFMediaType* pInputType(NULL), * pOutType(NULL);
+	PROPVARIANT var;
+
+	hr = MFCreateMediaType(&pInputType);
+	hr = pInputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+	hr = pInputType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+	hr = pInputType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, (UINT32)m_iInputSampleBits);
+	hr = pInputType->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, (UINT32)m_iInputSampleRate);
+	hr = pInputType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, (UINT32)m_iInputSampleChannel);
+	hr = m_pEncoder->SetInputType(0, pInputType, 0);
+	if (SUCCEEDED(hr))
+	{
+		hr = MFCreateMediaType(&pOutType);
+		hr = pOutType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+		hr = pOutType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_AAC);
+		hr = pOutType->SetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, (UINT32)m_iInputSampleBits);
+		hr = pOutType->SetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, (UINT32)m_iInputSampleRate);
+		hr = pOutType->SetUINT32(MF_MT_AUDIO_NUM_CHANNELS, (UINT32)m_iInputSampleChannel);
+		hr = pOutType->SetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, (UINT32)m_iOutputBytePerSecond);
+		hr = pOutType->SetUINT32(MF_MT_AAC_PAYLOAD_TYPE, 0);
+		hr = pOutType->SetUINT32(MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION, (UINT32)0x29); // AAC Profile L2
+		hr = m_pEncoder->SetOutputType(0, pOutType, 0);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		PropVariantInit(&var);
+		pOutType->GetItem(MF_MT_USER_DATA, &var); // MF_MT_USER_DATA  vector of unsigned char  VT_VECTOR|VT_UI1
+		if (SUCCEEDED(hr))
+		{
+			CAUB caub = var.caub; // 第13和14字节是AudioSpecificConfig
+			auto a = caub.pElems + 12;
+			ParseAudioSpecificConfig(m_aacAudioConfig, a, caub.cElems - 12);
+			PropVariantClear(&var);
+		}
+
+		hr = m_pEncoder->GetInputStreamInfo(dwInID, &m_streamInfoIn);
+		hr = m_pEncoder->GetOutputStreamInfo(dwOutID, &m_streamInfoOut);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		if (m_streamInfoOut.dwFlags & MFT_OUTPUT_STREAM_PROVIDES_SAMPLES)
+		{
+			LOG() << "MFT_OUTPUT_STREAM_PROVIDES_SAMPLES aac encoder";
+			m_dataOut.pSample = NULL;
+		}
+
+		IMFSample* pSample = NULL;
+		IMFMediaBuffer* pBuffer = NULL;
+		hr = MFCreateSample(&pSample);
+		if (SUCCEEDED(hr))
+		{
+			hr = MFCreateMemoryBuffer(m_iInputSampleRate * m_iInputSampleChannel * m_iInputSampleBits / 8 / 2, &pBuffer);
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = pSample->AddBuffer(pBuffer);
+			pBuffer->Release();
+			m_dataOut.dwStreamID = dwOutID;
+			m_dataOut.pSample = pSample;
+		}
+	}
+
+	//hr = m_pEncoder->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0);
+	//hr = m_pEncoder->ProcessMessage(MFT_MESSAGE_NOTIFY_START_OF_STREAM, 0);
+
+	if (pInputType)
+		pInputType->Release();
+	if (pOutType)
+		pOutType->Release();
+
+	if (SUCCEEDED(hr))
+		return CodeOK;
+	else
+		return CodeFalse;
+}
+
+int MFAACEncoder::Destroy()
+{
+	return CodeOK;
+}
+
+int MFAACEncoder::ProcessInput(uint8_t* [], int)
+{
+	return CodeFalse;
+}
+
+int MFAACEncoder::ProcessInput(IMFSample* pSample)
+{
+	if (!pSample || !m_pEncoder)
+	{
+		return CodeFalse;
+	}
+
+	HRESULT hr = MF_E_TRANSFORM_NEED_MORE_INPUT;
+	DWORD dwStatus(0);
+	DWORD len(0);
+	IMFMediaBuffer* pBuf = NULL;
+	BYTE* pData = NULL;
+
+	hr = m_pEncoder->ProcessInput(0, pSample, 0);
+	if (SUCCEEDED(hr))
+	{
+	Again:
+		hr = m_pEncoder->ProcessOutput(0, 1, &m_dataOut, &dwStatus);
+		if (m_dataOut.pEvents)
+		{
+			m_dataOut.pEvents->Release();
+			m_dataOut.pEvents = NULL;
+		}
+		if (SUCCEEDED(hr))
+		{
+			m_dataOut.pSample->GetTotalLength(&len); // one aac frame(1024 PCM sample)
+			m_dataOut.pSample->ConvertToContiguousBuffer(&pBuf);
+			pBuf->Lock(&pData, NULL, &len);
+			{
+				static std::ofstream fileOut;
+				if (!fileOut.is_open())
+				{
+					fileOut.open("d:\\1.aac", std::ofstream::binary | std::ofstream::out);
+				}
+				unsigned char adtsheader[7];
+				CreateAACADTSHeader(adtsheader, this->m_aacAudioConfig, (int)len);
+				fileOut.write((char*)adtsheader, 7);
+				fileOut.write((char*)pData, len);
+			}
+			pBuf->Unlock();
+			pBuf->Release();
+			pBuf = NULL;
+			goto Again;
+		}
+		else if(hr == MF_E_TRANSFORM_NEED_MORE_INPUT)
+		{
+			return CodeOK;
+		}
+		else
+		{
+			LOG() << "mf aac encoder ProcessOutput " << std::hex << hr << std::dec;
+			return CodeFalse;
+		}
+	}
+	else
+	{
+		LOG() << "mf aac encoder ProcessInput " << std::hex << hr << std::dec;
+		return CodeFalse;
+	}
 
 	return CodeOK;
 }

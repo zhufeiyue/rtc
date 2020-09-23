@@ -1,11 +1,13 @@
 #pragma once
 #include <cassert>
 #include <atomic>
+#include <future>
 #include "common.h"
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
 
+class MFAACEncoder;
 class MFCaptureAudio : public IMFSourceReaderCallback
 {
 public:
@@ -33,13 +35,18 @@ protected:
 
 protected:
     std::atomic<ULONG> m_nRefCount = 1;
-    BOOL m_bCapture = TRUE;
+    BOOL m_bCapture = FALSE;
     IMFMediaSource* m_pSource = NULL;
     IMFSourceReader* m_pReader = NULL;
     std::wstring m_strSymbolicLink;
     DWORD m_dwStreamIndex = 0;
     DWORD m_dwMediaIndex = 0;
     IMFTransform* m_pAudoSampleTransform = NULL;
+    DWORD m_iCaptureSampleRate = 0;
+    DWORD m_iCaptureSampleChannel = 0;
+    DWORD m_iCaptureSampleBits = 0;
     MFT_OUTPUT_DATA_BUFFER m_resamleOutData = { 0 };
+    MFAACEncoder* m_pAACEncoder = NULL;
+    std::promise<bool> m_waitReadEnd;
 };
 
