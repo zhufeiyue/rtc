@@ -1,6 +1,6 @@
 #pragma once
 #include <boost/lockfree/queue.hpp>
-#include "common.h"
+#include "../common/common.h"
 
 class FrameQueue
 {

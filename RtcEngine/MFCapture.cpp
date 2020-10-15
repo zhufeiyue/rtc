@@ -2,9 +2,14 @@
 #include <strsafe.h>
 #include <Mferror.h>
 #include <Wmcodecdsp.h>
+#include <dshow.h>
+#include <dmort.h>
 #include <propvarutil.h>
 #include <shlwapi.h>
 #include "MFCodecWrap.h"
+
+#pragma comment(lib, "Msdmo.lib")
+#pragma comment(lib, "dmoguids.lib")
 
 HRESULT LogMediaType(IMFMediaType* pType);
 #define ResampleOutputRate 44100
@@ -434,5 +439,116 @@ int MFCaptureAudio::OpenMediaAudioSource(IMFMediaSource* pSource)
     {
         pAttribute->Release();
     }
+    return CodeOK;
+}
+
+
+int VoiceCapture::StartCapture()
+{
+    HRESULT hr;
+    IPropertyStore* pPS = NULL;
+    PROPVARIANT var;
+    DWORD dwIn(0), dwOut(0);
+
+    hr = CoCreateInstance(CLSID_CWMAudioAEC, NULL, CLSCTX_INPROC_SERVER, __uuidof(IMediaObject), (void**)&m_pCapture);
+    if (FAILED(hr))
+    {
+        return FALSE;
+    }
+
+    hr = m_pCapture->QueryInterface(__uuidof(IPropertyStore), (void**)&pPS);
+    if (SUCCEEDED(hr))
+    {
+        var.vt = VT_I4;
+        var.intVal = 0;
+        hr = pPS->SetValue(MFPKEY_WMAAECMA_SYSTEM_MODE, var);
+    }
+
+    hr = m_pCapture->GetStreamCount(&dwIn, &dwOut);
+
+    if (SUCCEEDED(hr))
+    {
+        GUID guid;
+        DMO_MEDIA_TYPE mt;
+        mt.majortype = MFMediaType_Audio;  //MEDIATYPE_Audio;
+        mt.subtype = MFAudioFormat_PCM; // MEDIASUBTYPE_PCM;
+        mt.lSampleSize = 2;
+        mt.bFixedSizeSamples = TRUE;
+        mt.bTemporalCompression = FALSE;
+        hr = IIDFromString(L"{05589f81-c356-11ce-bf01-00aa0055595a}", &guid);
+        mt.formattype = guid; //FORMAT_WaveFormatEx;
+
+        hr = MoInitMediaType(&mt, sizeof(WAVEFORMATEX));
+        if (SUCCEEDED(hr))
+        {
+            WAVEFORMATEX* pwav = (WAVEFORMATEX*)mt.pbFormat;
+            pwav->wFormatTag = WAVE_FORMAT_PCM;
+            pwav->nChannels = 1;
+            pwav->wBitsPerSample = 16;
+            pwav->nSamplesPerSec = 16000;
+            pwav->nBlockAlign = pwav->nChannels * pwav->wBitsPerSample / 8;
+            pwav->nAvgBytesPerSec = pwav->nBlockAlign * pwav->nSamplesPerSec;
+            pwav->cbSize = 0;
+
+            if (SUCCEEDED(hr))
+            {
+                hr = m_pCapture->SetOutputType(0, &mt, 0);
+            }
+            MoFreeMediaType(&mt);
+        }
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        hr = m_pCapture->AllocateStreamingResources();
+    }
+
+    if (FAILED(hr))
+    {
+        return CodeFalse;
+    }
+
+    int count(0);
+    DWORD dwStatus(0), len(0);
+    hr = CMediaBuffer::Create(44100 * 4 * 2, &m_dataOut.pBuffer);
+    hr = m_pCapture->GetOutputStreamInfo(0, &dwStatus);
+
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        hr = m_pCapture->ProcessOutput(0, 1, &m_dataOut, &dwStatus);
+
+        if (FAILED(hr))
+        {
+            std::string message = std::system_category().message(hr);
+            LOG() << "ProcessOutput " << message;
+            break;
+        }
+        else
+        {
+            m_dataOut.pBuffer->GetBufferAndLength(NULL, &len);
+            m_dataOut.pBuffer->SetLength(0);
+            LOG() << "output len " << len;
+        }
+        if (++count > 100)
+        {
+            break;
+        }
+    }
+
+    m_pCapture->FreeStreamingResources();
+    m_pCapture->Release();
+    m_pCapture = NULL;
+
+    if (pPS)
+    {
+        pPS->Release();
+        pPS = NULL;
+    }
+    return CodeOK;
+}
+
+int VoiceCapture::EndCapture()
+{
     return CodeOK;
 }

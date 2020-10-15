@@ -1,5 +1,5 @@
 #pragma once
-#include "common.h"
+#include "../common/common.h"
 #include <mftransform.h>
 
 class MFH264Encoder

@@ -7,7 +7,7 @@
 #include <string>
 #include <map>
 #include <mfidl.h>
-#include "common.h"
+#include "../common/common.h"
 
 struct DesiredVideoConfig
 {

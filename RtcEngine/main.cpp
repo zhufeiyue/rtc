@@ -1,4 +1,3 @@
-#include <Windows.h>
 #include "CaptureWindowWorker.h"
 #include "X264Wrap.h"
 #include "MFCodecWrap.h"
@@ -8,6 +7,7 @@
 #include "MFDevice.h"
 #include "MFCapture.h"
 #include <mfidl.h>
+#include <future>
 
 void test()
 {
@@ -129,7 +129,13 @@ int __stdcall WinMain(HINSTANCE hInstance,
 
 	//test();
 	//test1();
-	test2();
+	//test2();
+
+	auto pCapture = new VoiceCapture();
+	pCapture->StartCapture();
+	//std::this_thread::sleep_for(std::chrono::seconds(20));
+	pCapture->EndCapture();
+	delete pCapture;
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 	DestroyMFEnv();

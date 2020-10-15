@@ -1,5 +1,5 @@
 #pragma once
-#include "common.h"
+#include "../common/common.h"
 #include "x264/x264.h"
 
 class X264Wrap
