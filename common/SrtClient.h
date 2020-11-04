@@ -6,10 +6,13 @@
 class SrtClient
 {
 public:
+	SrtClient();
+	~SrtClient();
 	int Connect(std::string address, int16_t port);
 	int DisConnect();
 
 protected:
+	int ConfigureSrtSocket();
 	int ClientLoop();
 
 protected:

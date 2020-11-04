@@ -9,6 +9,18 @@
 #pragma comment(lib, "Ws2_32.lib")
 #endif
 
+SrtClient::SrtClient()
+{
+}
+
+SrtClient::~SrtClient()
+{
+	if (m_fuClient.valid())
+	{
+		m_fuClient.get();
+	}
+}
+
 int SrtClient::Connect(std::string address, int16_t port)
 {
 	SRTSOCKET u = srt_create_socket();
@@ -22,18 +34,15 @@ int SrtClient::Connect(std::string address, int16_t port)
 		LOG() << "srt_create_socket";
 		return CodeFalse;
 	}
-
-	bool bSync = false;
-	res = srt_setsockflag(u, SRTO_SNDSYN, &bSync, sizeof(bSync));
-	res = srt_setsockflag(u, SRTO_RCVSYN, &bSync, sizeof(bSync));
-	if (res != SRT_ERRNO::SRT_SUCCESS)
+	m_socket = u;
+	if (CodeOK != ConfigureSrtSocket())
 	{
-		LOG() << srt_getlasterror_str();
+		LOG() << "fail to configure srt socket";
 		return CodeFalse;
 	}
 
 	m_srt_epoll = srt_epoll_create();
-	srt_epoll_set(m_srt_epoll, SRT_EPOLL_ENABLE_EMPTY);
+	//srt_epoll_set(m_srt_epoll, SRT_EPOLL_ENABLE_EMPTY);
 	res = srt_epoll_add_usock(m_srt_epoll, u, &events);
 	if (res != SRT_ERRNO::SRT_SUCCESS)
 	{
@@ -59,25 +68,41 @@ int SrtClient::Connect(std::string address, int16_t port)
 	{
 		LOG() << "srt_connect " << srt_getlasterror_str();
 	}
-	m_socket = u;
 	
 	return CodeOK;
 }
 
 int SrtClient::DisConnect()
 {
-	m_bClientLoopRunning = false;
-
 	if (m_socket != SRT_INVALID_SOCK)
 	{
 		srt_close(m_socket);
 		m_socket = SRT_INVALID_SOCK;
 	}
 
-	//if (m_fuClient.valid())
-	//{
-	//	m_fuClient.get();
-	//}
+	return CodeOK;
+}
+
+int SrtClient::ConfigureSrtSocket()
+{
+	bool bSync = false;
+	int res = 0;
+
+	if (m_socket == SRT_INVALID_SOCK)
+	{
+		return CodeFalse;
+	}
+
+	res = srt_setsockflag(m_socket, SRTO_SNDSYN, &bSync, sizeof(bSync));
+	res = srt_setsockflag(m_socket, SRTO_RCVSYN, &bSync, sizeof(bSync));
+	if (res != SRT_ERRNO::SRT_SUCCESS)
+	{
+		LOG() << srt_getlasterror_str();
+		return CodeFalse;
+	}
+
+	int mode = SRTT_LIVE;
+	res = srt_setsockflag(m_socket, SRTO_TRANSTYPE, &mode, sizeof(mode));
 
 	return CodeOK;
 }
@@ -120,12 +145,10 @@ int SrtClient::ClientLoop()
 
 		if (ue & SRT_EPOLL_IN)
 		{
-			if (ue & SRT_EPOLL_IN)
-			{
-				char buf[1500] = { 0 };
-				srt_recv(u, buf, 1500);
-				LOG() << buf;
-			}
+			char buf[1500] = { 0 };
+			srt_recv(u, buf, 1500);
+			LOG() << buf;
+
 			continue;
 		}
 

@@ -43,8 +43,8 @@ protected:
 	HDC m_hMemDC = NULL;
 	HBITMAP m_hBitmap = NULL;
 	RECT m_rectOLD = { 0 };
-	LONG m_oldWidth = 0;  // 窗口高
-	LONG m_oldHeight = 0; // 窗口宽
+	LONG m_oldWidth = 0;  // 窗口宽
+	LONG m_oldHeight = 0; // 窗口高
 
 	unsigned char* pBmpData_ = NULL;
 	std::unique_ptr<unsigned char> pBmpDataUpSideDown;

@@ -51,7 +51,7 @@ LogPrintHelper::~LogPrintHelper()
 
 	std::clog << logString;
 
-#ifndef _DEBUG
+#ifdef _DEBUG
 #ifdef _WIN32
 	OutputDebugStringA(logString.c_str());
 #endif
