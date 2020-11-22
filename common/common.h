@@ -35,7 +35,8 @@ enum ErrorCode
 {
 	CodeInternalError = -1,
 	CodeFalse,
-	CodeOK
+	CodeOK,
+	CodeSrtEpoll_0
 };
 
 struct WaitSomeTime

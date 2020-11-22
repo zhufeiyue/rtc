@@ -3,6 +3,7 @@
 #include <functional>
 #include <mutex>
 #include <queue>
+#include <map>
 #include <boost/lockfree/queue.hpp>
 #include "common.h"
 

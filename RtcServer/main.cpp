@@ -2,13 +2,16 @@
 #include "SrtServer.h"
 #include "../common/SrtClient.h"
 #include "../common/jsmn.h"
-#include "../common/EventQueue.h"
+#include "../common/Eventloop.h"
+#include "../common/SrtListener.h"
+#include "SrtServer.h"
 
 int main(int argc , char* argv[])
 {
     srt_startup();
 
     auto pQueue = new EventQueueLockFree();
+    //auto pQueue = new EventQueueMutex();
     pQueue->PushEvent(
         []() {
             std::cout << "1";
@@ -35,15 +38,11 @@ int main(int argc , char* argv[])
         }
     );
 
-    auto p = new SrtServer();
-    p->Create();
+    auto pLoop = new Eventloop();
+    auto pServer = new SrtServer(*pLoop, 1);
+    pServer->Start("0.0.0.0", 8000);
+    pLoop->Run();
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    auto pSrtClient = new SrtClient();
-    pSrtClient->Connect("127.0.0.1", 8000);
-
-    std::this_thread::sleep_for(std::chrono::seconds(50));
-    p->Destroy();
 
     srt_cleanup();
     return 0;

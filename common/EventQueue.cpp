@@ -34,15 +34,11 @@ int EventQueueMutex::PopEvent(Fn& f)
 
 int EventQueueMutex::PopAll(std::function<void(Fn&)> cb)
 {
-	std::lock_guard<std::mutex> guard(m_mutex);
+	Fn f;
 
-	while (!m_queue.empty())
+	while (CodeOK == PopEvent(f))
 	{
-		if (cb)
-		{
-			cb(m_queue.front());
-		}
-		m_queue.pop();
+		cb(f);
 	}
 
 	return CodeOK;
