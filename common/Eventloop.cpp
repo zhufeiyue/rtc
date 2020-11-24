@@ -2,6 +2,7 @@
 
 Eventloop::Eventloop()
 {
+	m_threadID = std::this_thread::get_id();
 }
 
 Eventloop::~Eventloop()
@@ -26,7 +27,7 @@ int Eventloop::Run()
 		if (res == CodeOK)
 		{
 			fn();
-			continue;
+			//continue;
 		}
 		res = m_eventQueueWorker.PopEvent(fn);
 		if (res == CodeOK)
@@ -49,10 +50,17 @@ int Eventloop::Quit()
 
 int Eventloop::AddToEpoll(SRTSOCKET u, SrtFn fn, int flags)
 {
-	return QueueInLoop([=]() 
+	return QueueInLoop([=]() mutable
 		{
-			auto temp = fn;
-			m_srtEpoll.AddToEpoll(u, std::move(temp), flags);
+			m_srtEpoll.AddToEpoll(u, std::move(fn), flags);
+		}, false);
+}
+
+int Eventloop::RemoveFromEpoll(SRTSOCKET u)
+{
+	return QueueInLoop([=]()
+		{
+			m_srtEpoll.RemoveFromEpoll(u);
 		}, false);
 }
 
@@ -63,14 +71,14 @@ int Eventloop::QueueInLoop(Fn&& fn, bool bInWorkQueue)
 		return m_eventQueueWorker.PushEvent(std::forward<Fn>(fn));
 	}
 
-	if (m_threadID == std::this_thread::get_id())
-	{
-		fn();
-	}
-	else
-	{
+	//if (m_threadID == std::this_thread::get_id())
+	//{
+	//	fn();
+	//}
+	//else
+	//{
 		return m_eventQueue.PushEvent(std::forward<Fn>(fn));
-	}
+	//}
 	return CodeOK;
 }
 
@@ -83,3 +91,45 @@ EventLoopThread::~EventLoopThread()
 {
 }
 
+int EventLoopThread::IsRunning()
+{
+	return m_bRunning && m_loop.IsRunning();
+}
+
+int EventLoopThread::Start()
+{
+	if (m_fuThread.valid())
+	{
+		return CodeFalse;
+	}
+
+	m_fuThread = std::async([this]() 
+		{
+			Fn fn;
+
+			while (m_loop.IsRunning())
+			{
+				if (CodeOK == m_loop.WorkerEventQueue().PopEvent(fn))
+				{
+					fn();
+				}
+				else
+				{
+					std::this_thread::sleep_for(std::chrono::milliseconds(50));
+				}
+			}
+			return 0;
+		});
+
+	return CodeOK;
+}
+
+int EventLoopThread::Stop()
+{
+	m_bRunning = true;
+	if (m_fuThread.valid())
+	{
+		m_fuThread.wait();
+	}
+	return CodeOK;
+}

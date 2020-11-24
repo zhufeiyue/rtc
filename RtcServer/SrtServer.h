@@ -10,6 +10,9 @@ public:
 	int Stop();
 	int Start(std::string, int );
 
+protected:
+	void OnNewConnect(SRTSOCKET, std::string, int);
+
 private:
 	Eventloop& m_loop;
 	int m_iWorkNum = 0;

@@ -1,27 +1,24 @@
 #pragma once
 #include <future>
-#include "srt/include/srt/srt.h"
-#include "common.h"
+#include "Eventloop.h"
 
 class SrtClient
 {
 public:
-	SrtClient();
+	SrtClient(Eventloop&);
 	~SrtClient();
 	int Connect(std::string address, int16_t port);
 	int DisConnect();
 
 protected:
 	int ConfigureSrtSocket();
-	int ClientLoop();
 
 protected:
 	void OnConnect(int);
 	void OnDisConnect(int);
+	void OnError(int);
 
 protected:
 	SRTSOCKET m_socket = SRT_INVALID_SOCK;
-	int m_srt_epoll = 0;
-	int m_bClientLoopRunning = false;
-	std::future<int> m_fuClient;
+	Eventloop& m_loop;
 };

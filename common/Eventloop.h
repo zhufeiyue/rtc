@@ -1,6 +1,6 @@
 #pragma once
+#include <future>
 #include "EventQueueSrt.h"
-
 
 class Eventloop
 {
@@ -14,6 +14,7 @@ public:
 	int Quit();
 
 	int AddToEpoll(SRTSOCKET, SrtFn, int);
+	int RemoveFromEpoll(SRTSOCKET);
 	int QueueInLoop(Fn&& fn, bool bInWorkQueue=true);
 
 
@@ -30,8 +31,12 @@ class EventLoopThread
 public:
 	~EventLoopThread();
 	EventLoopThread(Eventloop&);
-
+	int IsRunning();
+	int Start();
+	int Stop();
 
 private:
 	Eventloop& m_loop;
+	int m_bRunning = false;
+	std::future<int> m_fuThread;
 };

@@ -12,6 +12,7 @@ public:
 	~EventQueueSrt();
 	int GetEpollID() { return  m_srt_epoll; }
 	int AddToEpoll(SRTSOCKET, SrtFn&& , int );
+	int RemoveFromEpoll(SRTSOCKET);
 	int Pull();
 
 private:

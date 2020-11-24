@@ -54,6 +54,20 @@ int EventQueueSrt::AddToEpoll(SRTSOCKET u, SrtFn&& fn, int ev)
 	return CodeOK;
 }
 
+int EventQueueSrt::RemoveFromEpoll(SRTSOCKET u)
+{
+	auto iter = m_mapSockets.find(u);
+	if (iter == m_mapSockets.end())
+	{
+		return CodeFalse;
+	}
+
+	m_mapSockets.erase(iter);
+	srt_epoll_remove_usock(m_srt_epoll, u);
+
+	return CodeOK;
+}
+
 int EventQueueSrt::Pull()
 {
 	int res;
