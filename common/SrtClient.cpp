@@ -113,10 +113,6 @@ int SrtClient::ConfigureSrtSocket()
 void SrtClient::OnConnect(int)
 {
 	LOG() << __FUNCTION__;
-	//m_loop.QueueInLoop([this]() 
-	//	{
-	//		srt_close(m_socket);
-	//	}, false);
 }
 
 void SrtClient::OnDisConnect(int)

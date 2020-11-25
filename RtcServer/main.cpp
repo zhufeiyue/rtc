@@ -14,6 +14,8 @@ int main(int argc , char* argv[])
     auto pServer = new SrtServer(*pLoop, 2);
     pServer->Start("0.0.0.0", 8000);
 
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
     auto pClient = new SrtClient(*pLoop);
     pClient->Connect("127.0.0.1", 8000);
 

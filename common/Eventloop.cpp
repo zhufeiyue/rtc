@@ -71,14 +71,14 @@ int Eventloop::QueueInLoop(Fn&& fn, bool bInWorkQueue)
 		return m_eventQueueWorker.PushEvent(std::forward<Fn>(fn));
 	}
 
-	//if (m_threadID == std::this_thread::get_id())
-	//{
-	//	fn();
-	//}
-	//else
-	//{
+	if (m_threadID == std::this_thread::get_id())
+	{
+		fn();
+	}
+	else
+	{
 		return m_eventQueue.PushEvent(std::forward<Fn>(fn));
-	//}
+	}
 	return CodeOK;
 }
 

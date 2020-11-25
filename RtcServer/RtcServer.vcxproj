@@ -148,6 +148,7 @@
     <ClCompile Include="..\common\Eventloop.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="..\common\SrtListener.cpp" />
+    <ClCompile Include="SrtConn.cpp" />
     <ClCompile Include="SrtServer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +158,7 @@
     <ClInclude Include="..\common\EventQueueSrt.h" />
     <ClInclude Include="..\common\Eventloop.h" />
     <ClInclude Include="..\common\SrtListener.h" />
+    <ClInclude Include="SrtConn.h" />
     <ClInclude Include="SrtServer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

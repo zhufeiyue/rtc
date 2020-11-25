@@ -41,14 +41,17 @@ int EventQueueSrt::AddToEpoll(SRTSOCKET u, SrtFn&& fn, int ev)
 		}
 		else
 		{
-			LOG() << "srt_epoll_add_usock " << res;
+			LOG() << "srt_epoll_add_usock " << srt_getlasterror_str();
 		}
 	}
 	else
 	{
 		LOG() << "AddToEpoll exist " << u;
 		auto res = srt_epoll_update_usock(m_srt_epoll, u, &ev);
-		LOG() << "srt_epoll_update_usock " << res;
+		if (res != 0)
+		{
+			LOG() << "srt_epoll_update_usock " << srt_getlasterror_str();
+		}
 	}
 
 	return CodeOK;
@@ -63,7 +66,10 @@ int EventQueueSrt::RemoveFromEpoll(SRTSOCKET u)
 	}
 
 	m_mapSockets.erase(iter);
-	srt_epoll_remove_usock(m_srt_epoll, u);
+	if (0 != srt_epoll_remove_usock(m_srt_epoll, u))
+	{
+		LOG() << __FUNCTION__ << srt_getlasterror_str();
+	}
 
 	return CodeOK;
 }
@@ -86,7 +92,7 @@ int EventQueueSrt::Pull()
 
 	auto iter = m_mapSockets.end();
 	int ev;
-	SRTSOCKET u = SRTT_INVALID;
+	SRTSOCKET u = SRT_INVALID_SOCK;
 	for (int i = 0; i < res; ++i)
 	{
 		ev = m_fdSockets[i].events;

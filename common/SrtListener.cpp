@@ -7,7 +7,8 @@ SrtListener::SrtListener(Eventloop& loop):
 
 SrtListener::~SrtListener()
 {
-	srt_close(m_srtSocket);
+	if (m_srtSocket != SRT_INVALID_SOCK)
+		srt_close(m_srtSocket);
 }
 
 int SrtListener::Listen(std::string address, int port)
@@ -49,11 +50,32 @@ int SrtListener::Listen(std::string address, int port)
 	return res;
 }
 
+int SrtListener::Stop()
+{
+	srt_close(m_srtSocket);
+	m_loop.RemoveFromEpoll(m_srtSocket);
+	m_srtSocket = SRT_INVALID_SOCK;
+
+	return CodeOK;
+}
+
 void SrtListener::HandleAccept(int ev)
 {
 	SRTSOCKET u;
 	sockaddr_in sa;
 	int salen = sizeof(sa);
+	u_short port = 0;
+	char buf[32] = { 0 };
+
+	if (ev & SRT_EPOLL_ERR)
+	{
+		LOG() << __FUNCTION__ << ' ' << SRT_EPOLL_ERR;
+		if (m_cbListenError)
+		{
+			m_cbListenError(ev);
+		}
+		return;
+	}
 
 	u = srt_accept(m_srtSocket, (sockaddr*)&sa, &salen);
 	if (u == SRT_INVALID_SOCK)
@@ -62,9 +84,9 @@ void SrtListener::HandleAccept(int ev)
 		return;
 	}
 
-	auto port = ntohs(sa.sin_port);
-	char buf[32] = { 0 };
-	inet_ntop(AF_INET, (void*)&sa, buf, sizeof(buf));
+	port = ntohs(sa.sin_port);
+	
+	inet_ntop(sa.sin_family, (void*)&sa.sin_addr, buf, sizeof(buf));
 
 	if (m_cbNewConnect)
 	{
