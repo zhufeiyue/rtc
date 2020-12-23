@@ -27,16 +27,13 @@ int Eventloop::Run()
 		if (res == CodeOK)
 		{
 			fn();
-			//continue;
 		}
+
 		res = m_eventQueueWorker.PopEvent(fn);
 		if (res == CodeOK)
 		{
 			fn();
-			continue;
 		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 
 	return CodeOK;
@@ -82,6 +79,7 @@ int Eventloop::QueueInLoop(Fn&& fn, bool bInWorkQueue)
 	return CodeOK;
 }
 
+
 EventLoopThread::EventLoopThread(Eventloop& loop):
 	m_loop(loop)
 {
@@ -107,7 +105,7 @@ int EventLoopThread::Start()
 		{
 			Fn fn;
 
-			while (m_loop.IsRunning())
+			while (IsRunning())
 			{
 				if (CodeOK == m_loop.WorkerEventQueue().PopEvent(fn))
 				{
@@ -126,7 +124,7 @@ int EventLoopThread::Start()
 
 int EventLoopThread::Stop()
 {
-	m_bRunning = true;
+	m_bRunning = false;
 	if (m_fuThread.valid())
 	{
 		m_fuThread.wait();

@@ -59,22 +59,20 @@ int SrtServer::Start(std::string address, int port)
 
 void SrtServer::OnNewConnect(SRTSOCKET u, std::string address, int port)
 {
-	//srt_close(u);
 	//srt_send(u, "12345678", 5);
 	//srt_send(u, "etyhk,olp;o", 5);
 	//srt_send(u, "23434rwr", 5);
 	//srt_send(u, "12erfwer345678", 5);
 	//srt_send(u, "12345erefer678", 5);
-	//srt_send(u, "rrrrrer", 5);
+	//srt_send(u, "exit", 4);
 
 	if (!m_cbConnection)
 	{
 		srt_close(u);
 		return;
 	}
-
 	auto pConn = std::make_shared<SrtConn>(m_loop, u, std::move(address), port);
-	auto p = pConn->shared_from_this();
+	
 	m_cbConnection(std::move(pConn));
 }
 

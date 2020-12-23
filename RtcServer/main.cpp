@@ -12,6 +12,10 @@ int main(int argc , char* argv[])
 
     auto pLoop = new Eventloop();
     auto pServer = new SrtServer(*pLoop, 2);
+    pServer->SetConnectionCb([](SrtConnPtr pConnection) 
+        {
+
+        });
     pServer->Start("0.0.0.0", 8000);
 
     std::this_thread::sleep_for(std::chrono::seconds(1));

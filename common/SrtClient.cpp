@@ -66,9 +66,8 @@ int SrtClient::Connect(std::string address, int16_t port)
 			if (flag & SRT_EPOLL_IN)
 			{
 				char buf[2048] = { 0 };
-				srt_recv(m_socket, buf, sizeof(buf));
-				LOG() << buf;
-				// todo on message
+				int len = srt_recv(m_socket, buf, sizeof(buf));
+				OnMessage(buf, len);
 			}
 		}, SRT_EPOLL_OUT | SRT_EPOLL_ERR);
 	
@@ -123,4 +122,24 @@ void SrtClient::OnDisConnect(int)
 void SrtClient::OnError(int)
 {
 	LOG() << __FUNCTION__;
+}
+
+void SrtClient::OnMessage(const char* pData, int len)
+{
+	if (len > 0)
+	{
+		LOG() << pData;
+		if (strncmp(pData, "exit", 5) == 0)
+		{
+			DisConnect();
+		}
+	}
+	else if (len == 0)
+	{
+		OnDisConnect(0);
+	}
+	else
+	{
+		OnError(0);
+	}
 }

@@ -7,6 +7,14 @@ public:
 	SrtConn(Eventloop&, SRTSOCKET, std::string, int );
 	~SrtConn();
 
+	SRTSOCKET GetSocket()
+	{
+		return m_socket;
+	}
+
+	int Init();
+	int Destroy();
+
 private:
 	Eventloop& m_loop;
 	std::string m_strAddress;

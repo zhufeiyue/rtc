@@ -17,6 +17,7 @@ protected:
 	void OnConnect(int);
 	void OnDisConnect(int);
 	void OnError(int);
+	void OnMessage(const char*, int);
 
 protected:
 	SRTSOCKET m_socket = SRT_INVALID_SOCK;

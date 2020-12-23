@@ -460,12 +460,38 @@ int VoiceCapture::StartCapture()
     if (SUCCEEDED(hr))
     {
         var.vt = VT_I4;
-        var.intVal = 0;
+        var.intVal = OPTIBEAM_ARRAY_AND_AEC;
         hr = pPS->SetValue(MFPKEY_WMAAECMA_SYSTEM_MODE, var);
     }
 
-    hr = m_pCapture->GetStreamCount(&dwIn, &dwOut);
+    if (SUCCEEDED(hr))
+    {
+        var.vt = VT_BOOL;
+        var.boolVal = VARIANT_TRUE;
+        hr = pPS->SetValue(MFPKEY_WMAAECMA_FEATURE_MODE, var);
+    }
 
+    if (SUCCEEDED(hr))
+    {
+        var.vt = VT_I4;
+        var.intVal = AEC_VAD_FOR_SILENCE_SUPPRESSION;
+        hr = pPS->SetValue(MFPKEY_WMAAECMA_FEATR_VAD, var);
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        var.intVal = 1;
+        hr = pPS->SetValue(MFPKEY_WMAAECMA_FEATR_NS, var);
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        var.vt = VT_BOOL;
+        var.boolVal = VARIANT_TRUE;
+        hr = pPS->SetValue(MFPKEY_WMAAECMA_FEATR_AGC, var);
+    }
+
+    hr = m_pCapture->GetStreamCount(&dwIn, &dwOut);
     if (SUCCEEDED(hr))
     {
         GUID guid;
@@ -515,13 +541,13 @@ int VoiceCapture::StartCapture()
 
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         hr = m_pCapture->ProcessOutput(0, 1, &m_dataOut, &dwStatus);
 
         if (FAILED(hr))
         {
             std::string message = std::system_category().message(hr);
-            LOG() << "ProcessOutput " << message;
+            LOG() << "ProcessOutput " << message << ' ' << GetLastError();
             break;
         }
         else
