@@ -2,7 +2,7 @@
 #include "../common/common.h"
 
 class FrameQueue;
-class WinCapture
+class WindowCapture
 {
 public:
 	enum class WindowType
@@ -11,8 +11,8 @@ public:
 		NormalWindow
 	};
 
-	explicit WinCapture(HWND);
-	~WinCapture();
+	explicit WindowCapture(HWND);
+	~WindowCapture();
 
 	int SetFrameSize(int w, int h);
 	virtual int Init();

@@ -44,12 +44,6 @@ public:
 
 	struct StreamInfo
 	{
-		StreamInfo() {}
-		StreamInfo(StreamInfo&& rr)
-		{
-			m_vMediaInfo = std::move(rr.m_vMediaInfo);
-		}
-
 		std::vector<MediaInfo> m_vMediaInfo;
 	};
 
@@ -62,8 +56,11 @@ public:
 
 	MFDevice();
 	~MFDevice();
+
+	HRESULT GetDevice(IID, std::wstring);
 	HRESULT EnumDevice(IID);
 	IMFActivate* GetDeviceActivate(size_t);
+
 	int ChooseVideo(DesiredVideoConfig, size_t deviceIndex, size_t& streamIndex, size_t& mediaIndex);
 	int ChooseAudio(DesiredAudioConfig, size_t deviceIndex, size_t& streamIndex, size_t& mediaIndex);
 

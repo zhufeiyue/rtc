@@ -2,8 +2,9 @@
 #include <strsafe.h>
 #include <mfapi.h>
 #include <Mferror.h>
-
 #include <mfapi.h>
+#include <mmdeviceapi.h>
+#include <dshow.h>
 
 #pragma comment(lib, "Mfplat.lib")
 #pragma comment(lib, "Mf.lib")
@@ -13,10 +14,11 @@
 #pragma comment(lib, "shlwapi.lib")
 #pragma comment(lib, "Rpcrt4.lib")
 #pragma comment(lib, "Propsys.lib")
+#pragma comment(lib, "Strmiids.lib")
 
 int InitMFEnv()
 {
-	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED );
 	if (SUCCEEDED(hr))
 	{
 		hr = MFStartup(MF_VERSION);
@@ -59,6 +61,34 @@ MFDevice::~MFDevice()
 	}
 }
 
+HRESULT MFDevice::GetDevice(IID type, std::wstring strSymbolicLink)
+{
+	HRESULT hr = S_FALSE;
+
+	if (m_pAttributes || m_ppDevices)
+	{
+		return hr;
+	}
+	m_guidDeviceType = type;
+	hr = MFCreateAttributes(&m_pAttributes, 2);
+	hr = m_pAttributes->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID);
+	hr = m_pAttributes->SetUINT32(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_HW_SOURCE, FALSE);
+	hr = m_pAttributes->SetString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, strSymbolicLink.c_str());
+	IMFActivate* pActivate = nullptr;
+	IMFMediaSource* pSource = nullptr;
+	hr = MFCreateDeviceSourceActivate(m_pAttributes, &pActivate);
+	//hr = MFCreateDeviceSource(m_pAttributes, &pSource);
+	if (SUCCEEDED(hr))
+	{
+		m_iDeviceCount = 1;
+		m_ppDevices = (IMFActivate**)CoTaskMemAlloc(sizeof(IMFActivate*) * m_iDeviceCount);
+		m_ppDevices[0] = pActivate;
+		GetDeviceInfo(m_ppDevices[0]);
+	}
+
+	return hr;
+}
+
 HRESULT MFDevice::EnumDevice(IID type)
 {
 	HRESULT hr = S_FALSE;
@@ -78,6 +108,12 @@ HRESULT MFDevice::EnumDevice(IID type)
 	{
 		goto Done;
 	}
+
+	// For video capture devices, specifies the device category. (Optional.) 
+	//hr = m_pAttributes->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_CATEGORY, CLSID_VideoInputDeviceCategory);
+	// For audio capture devices, specifies the device role. (Optional.) 
+	//hr = m_pAttributes->SetUINT32(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_ROLE, eCommunications);
+
 	m_iDeviceCount = 0;
 	hr = MFEnumDeviceSources(m_pAttributes, &m_ppDevices, &m_iDeviceCount);
 	if (FAILED(hr))
@@ -85,16 +121,14 @@ HRESULT MFDevice::EnumDevice(IID type)
 		LOG() << "MFEnumDeviceSources fail " << std::hex << hr << std::dec;
 		goto Done;
 	}
-	else
-	{
-		LOG() << "device num is " << m_iDeviceCount;
-	}
+	LOG() << "device num is " << m_iDeviceCount;
 
 	m_vDevicesInfo.clear();
 	for (UINT32 i = 0; i < m_iDeviceCount; ++i)
 	{
 		GetDeviceInfo(m_ppDevices[i]);
 	}
+	this;
 
 Done:
 	return hr;

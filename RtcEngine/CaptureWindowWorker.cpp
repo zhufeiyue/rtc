@@ -10,12 +10,12 @@ HWND CaptureWindowWorker::GetHWND()
 	return m_hWnd;
 }
 
-void CaptureWindowWorker::SetWindowType(WinCapture::WindowType type)
+void CaptureWindowWorker::SetWindowType(WindowCapture::WindowType type)
 {
 	m_iWindowType = type;
 }
 
-WinCapture::WindowType CaptureWindowWorker::GetWindowType()
+WindowCapture::WindowType CaptureWindowWorker::GetWindowType()
 {
 	return m_iWindowType;
 }
@@ -38,10 +38,10 @@ int CaptureWindowWorker::Init()
 	}
 
 	auto vcc = GetVideoCaptureConfigure();
-	m_pWinCapture.reset(new WinCapture(m_hWnd));
-	m_pWinCapture->SetWindowType(m_iWindowType);
-	m_pWinCapture->SetFrameSize(vcc.width, vcc.height);
-	if (CodeOK != m_pWinCapture->Init())
+	m_pWindowCapture.reset(new WindowCapture(m_hWnd));
+	m_pWindowCapture->SetWindowType(m_iWindowType);
+	m_pWindowCapture->SetFrameSize(vcc.width, vcc.height);
+	if (CodeOK != m_pWindowCapture->Init())
 	{
 		LOG() << "fail to init window capture";
 		return CodeFalse;
@@ -58,10 +58,10 @@ int CaptureWindowWorker::Destroy()
 	m_bRunning = false;
 	m_threadWorker.join();
 
-	if (m_pWinCapture)
+	if (m_pWindowCapture)
 	{
-		m_pWinCapture->Destroy();
-		m_pWinCapture.reset();
+		m_pWindowCapture->Destroy();
+		m_pWindowCapture.reset();
 	}
 
 	return CodeOK;
@@ -69,7 +69,7 @@ int CaptureWindowWorker::Destroy()
 
 int CaptureWindowWorker::WorkLoop()
 {
-	if (!m_pWinCapture)
+	if (!m_pWindowCapture)
 	{
 		return CodeFalse;
 	}
@@ -86,12 +86,12 @@ int CaptureWindowWorker::WorkLoop()
 
 int CaptureWindowWorker::DoCapture()
 {
-	if (!m_pWinCapture)
+	if (!m_pWindowCapture)
 	{
 		return CodeFalse;
 	}
 
-	auto res = m_pWinCapture->CpatureFrame();
+	auto res = m_pWindowCapture->CpatureFrame();
 	if (res != CodeOK)
 	{
 		return res;

@@ -441,7 +441,7 @@ int MFH264Encoder::Init()
 	{
 		InitVariantFromUInt32(eAVEncCommonRateControlMode_Quality, &var);
 		hr = pCodec->SetValue(&CODECAPI_AVEncCommonRateControlMode, &var);
-		InitVariantFromUInt32(50, &var);
+		InitVariantFromUInt32(40, &var); // 0-100  min-max quality
 		hr = pCodec->SetValue(&CODECAPI_AVEncCommonQuality, &var);
 		InitVariantFromBoolean(TRUE, &var);
 		hr = pCodec->SetValue(&CODECAPI_AVLowLatencyMode, &var);

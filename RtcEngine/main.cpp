@@ -1,13 +1,14 @@
 #include "CaptureWindowWorker.h"
 #include "X264Wrap.h"
 #include "MFCodecWrap.h"
-#include "WinCapture.h"
+#include "WindowCapture.h"
 #include "H264Encoder.h"
 #include "FrameQueue.h"
 #include "MFDevice.h"
 #include "MFCapture.h"
 #include <mfidl.h>
 #include <future>
+#include "libdshowcapture/dshowcapture.hpp"
 
 void test()
 {
@@ -16,9 +17,9 @@ void test()
 	//vcc.width = 1920;
 	//vcc.height = 1080;
 
-	auto pCapture = new WinCapture(GetDesktopWindow());
+	auto pCapture = new WindowCapture(GetDesktopWindow());
 	pCapture->SetFrameSize(vcc.width, vcc.height);
-	pCapture->SetWindowType(WinCapture::WindowType::DesktopWindow);
+	pCapture->SetWindowType(WindowCapture::WindowType::DesktopWindow);
 	pCapture->Init();
 
 	//auto pX264 = new X264Wrap();
@@ -70,7 +71,7 @@ void test1()
 	//vcc.height = 576;
 	pWork->SetHWND(GetDesktopWindow());
 	pWork->SetVideoCaptureConfigure(vcc);
-	pWork->SetWindowType(WinCapture::WindowType::DesktopWindow);
+	pWork->SetWindowType(WindowCapture::WindowType::DesktopWindow);
 	if (CodeOK != pWork->Init())
 	{
 		return;
@@ -120,6 +121,73 @@ void test2()
 	delete pCapture;
 }
 
+void test3()
+{
+	//auto pMFDevice = new MFDevice();
+	//pMFDevice->EnumDevice(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID);
+
+	std::vector<DShow::VideoDevice> devicesVideo;
+	std::vector<DShow::AudioDevice> devicesAudio;
+	DShow::Device::EnumVideoDevices(devicesVideo);
+	//DShow::Device::EnumAudioDevices(devicesAudio);
+
+	int frameRate = 25;
+	FrameQueue* fq = new FrameQueue();
+	//auto pH264 = new X264Wrap();
+	auto pH264 = new MFH264Encoder();
+	auto pH264Encoder = new H264Encoder<FrameQueue, MFH264Encoder>();
+
+	DShow::VideoConfig vConfig;
+	vConfig.cx = 1024;
+	vConfig.cy_abs = 576;
+	vConfig.format = vConfig.internalFormat = DShow::VideoFormat::I420;
+	vConfig.frameInterval = 10000000 / frameRate;
+	vConfig.name = devicesVideo[1].name;
+	//static_cast<DShow::Config&>(vConfig).useDefaultConfig = false;
+	vConfig.callback = [&fq](const DShow::VideoConfig& config, unsigned char* data,
+		size_t size, long long startTime, long long stopTime, long rotation) 
+	{
+		if (config.format != DShow::VideoFormat::I420)
+		{
+			return;
+		}
+
+		auto pFrame = fq->PopEmptyFrame(config.cx, config.cy_abs, size);
+		if (pFrame)
+		{
+			memcpy(pFrame->pData, data, size);
+			fq->PushUsedFrame(pFrame);
+		}
+	};
+
+	auto pDevice = new DShow::Device();
+	pDevice->ResetGraph();
+	pDevice->SetVideoConfig(&vConfig);
+	pDevice->ConnectFilters();
+	pDevice->GetVideoConfig(vConfig);
+	frameRate = 1000000000 / (vConfig.frameInterval * 100 );
+	
+	fq->SetFrameSize(vConfig.cx, vConfig.cy_abs);
+	auto ec = EncoderConfig();
+	ec.width = vConfig.cx;
+	ec.height = vConfig.cy_abs;
+	ec.frameRate = frameRate;
+
+	pH264->SetFrameSize(ec.width, ec.height, ec.frameRate);
+	pH264->Init();
+	pH264Encoder->SetEncoderConfig(ec);
+	pH264Encoder->SetFrameQueue(fq);
+	pH264Encoder->SetEncoder(pH264);
+	if (CodeOK != pH264Encoder->Init())
+	{
+		return;
+	}
+
+	pDevice->Start();
+	std::this_thread::sleep_for(std::chrono::seconds(30));
+	pDevice->Stop();
+}
+
 int __stdcall WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine,
@@ -130,12 +198,12 @@ int __stdcall WinMain(HINSTANCE hInstance,
 	//test();
 	//test1();
 	//test2();
+	test3();
 
-	auto pCapture = new VoiceCapture();
-	pCapture->StartCapture();
-	//std::this_thread::sleep_for(std::chrono::seconds(20));
-	pCapture->EndCapture();
-	delete pCapture;
+	//auto pCapture = new VoiceCapture();
+	//pCapture->StartCapture();
+	//pCapture->EndCapture();
+	//delete pCapture;
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 	DestroyMFEnv();

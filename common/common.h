@@ -53,10 +53,12 @@ struct WaitSomeTime
 
 	void Wait()
 	{
-		std::this_thread::sleep_until(timeNext - timeWaitModify);
+		std::this_thread::sleep_until(timeNext);
 		timeNow = std::chrono::steady_clock::now();
 		timeWaitModify = timeNow - timeNext;
-		timeNext += timeWaitGap;
+		if (timeWaitModify > timeWaitGap)
+			timeWaitModify = timeWaitGap;
+		timeNext = timeNow + timeWaitGap - timeWaitModify;
 	}
 
 	std::chrono::nanoseconds timeWaitGap;

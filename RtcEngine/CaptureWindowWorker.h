@@ -1,22 +1,22 @@
 #pragma once
 #include "ICaptureWoker.h"
-#include "WinCapture.h"
+#include "WindowCapture.h"
 
 class CaptureWindowWorker : public ICaptureWoker
 {
 public:
 	FrameQueue* GetFrameQueue()
 	{
-		if (m_pWinCapture)
-			return m_pWinCapture->GetFrameQueue();
+		if (m_pWindowCapture)
+			return m_pWindowCapture->GetFrameQueue();
 		else
 			return NULL;
 	}
 
 	void SetHWND(HWND hWnd);
 	HWND GetHWND();
-	void SetWindowType(WinCapture::WindowType);
-	WinCapture::WindowType GetWindowType();
+	void SetWindowType(WindowCapture::WindowType);
+	WindowCapture::WindowType GetWindowType();
 
 	int Init() override;
 	int Destroy() override;
@@ -27,6 +27,6 @@ protected:
 
 private:
 	HWND m_hWnd = NULL;
-	WinCapture::WindowType m_iWindowType = WinCapture::WindowType::NormalWindow;
-	std::unique_ptr<WinCapture> m_pWinCapture;
+	WindowCapture::WindowType m_iWindowType = WindowCapture::WindowType::NormalWindow;
+	std::unique_ptr<WindowCapture> m_pWindowCapture;
 };

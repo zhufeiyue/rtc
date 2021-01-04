@@ -1,4 +1,4 @@
-#include "WinCapture.h"
+#include "WindowCapture.h"
 #include "FrameQueue.h"
 #include "libyuv/libyuv.h"
 
@@ -41,7 +41,7 @@ bool isWindows8Point1OrGreater()
 	return res;
 }
 
-WinCapture::WinCapture(HWND hwnd)
+WindowCapture::WindowCapture(HWND hwnd)
 {
 	m_hWnd = hwnd;
 	if (!IsWindow(m_hWnd))
@@ -49,11 +49,11 @@ WinCapture::WinCapture(HWND hwnd)
 	}
 }
 
-WinCapture::~WinCapture()
+WindowCapture::~WindowCapture()
 {
 }
 
-int WinCapture::SetFrameSize(int w, int h)
+int WindowCapture::SetFrameSize(int w, int h)
 {
 	BOOST_ASSERT_MSG(h >= 0 && h % 2 == 0, "video frame height must be an even number");
 	BOOST_ASSERT_MSG(w >= 0 && w % 2 == 0, "video frame width must be an even number");
@@ -63,7 +63,7 @@ int WinCapture::SetFrameSize(int w, int h)
 	return 0;
 }
 
-int WinCapture::Init()
+int WindowCapture::Init()
 {
 	if (m_iFrameWidth == 0 || m_iFrameHeight == 0)
 	{
@@ -103,7 +103,7 @@ int WinCapture::Init()
 	return CodeOK;
 }
 
-int WinCapture::Destroy()
+int WindowCapture::Destroy()
 {
 	if (m_hBitmap)
 	{
@@ -126,7 +126,7 @@ int WinCapture::Destroy()
 	return CodeOK;
 }
 
-void WinCapture::CreateBitmap(int w , int h)
+void WindowCapture::CreateBitmap(int w , int h)
 {
 	memset(&bitmapHeader_, 0, sizeof(bitmapHeader_));
 	bitmapHeader_.biSize = sizeof(BITMAPINFOHEADER);
@@ -148,7 +148,7 @@ void WinCapture::CreateBitmap(int w , int h)
 	memset(pBmpData_, 255, bitmapHeader_.biSizeImage);
 }
 
-void WinCapture::SaveBitmap()
+void WindowCapture::SaveBitmap()
 {
 	static int count(0);
 
@@ -170,7 +170,7 @@ void WinCapture::SaveBitmap()
 	}
 }
 
-void WinCapture::SaveYUV()
+void WindowCapture::SaveYUV()
 {
 	auto pYData = m_pYUVData.get();
 	auto yLen = bitmapHeader_.biWidth * bitmapHeader_.biHeight;
@@ -263,7 +263,7 @@ void WinCapture::SaveYUV()
 	m_frameQueue->PushUsedFrame(pFrame);
 }
 
-void WinCapture::CaptureCursor(const RECT& winRect)
+void WindowCapture::CaptureCursor(const RECT& winRect)
 {
 	POINT pos;
 	if (!GetCursorPos(&pos))
@@ -288,7 +288,7 @@ void WinCapture::CaptureCursor(const RECT& winRect)
 	DrawIcon(m_hMemDC, dx, dy, info.hCursor);
 }
 
-int WinCapture::CpatureFrame()
+int WindowCapture::CpatureFrame()
 {
 	LONG w(0), h(0);
 	RECT rect = { 0 };
@@ -384,7 +384,7 @@ int WinCapture::CpatureFrame()
 	return CodeOK;
 }
 
-int WinCapture::SwitchWindow(HWND hwnd)
+int WindowCapture::SwitchWindow(HWND hwnd)
 {
 	LOG() << "Switch window!!!";
 

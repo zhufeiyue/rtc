@@ -90,4 +90,3 @@ protected:
 	FrameQueueType* m_pFrameQueue = NULL;
 	EncoderType* m_pEncoder = NULL;
 };
-
