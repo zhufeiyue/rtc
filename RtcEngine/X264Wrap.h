@@ -8,7 +8,7 @@ public:
 	X264Wrap();
 	~X264Wrap();
 
-	void SetFrameSize(int, int, int);
+	void SetFrameSize(int w, int h, int fr, int ff = X264_CSP_I420);
 
 	int Init();
 	int Destroy();
@@ -22,5 +22,6 @@ protected:
 	int m_iWidth = 0;
 	int m_iHeight = 0;
 	int m_iFrameRate = 0;
+	int m_iFrameFormat = X264_CSP_I420;
 };
 

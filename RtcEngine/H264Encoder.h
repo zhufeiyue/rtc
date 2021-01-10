@@ -21,8 +21,10 @@ public:
 		m_threadWorker = std::thread([this]()
 			{
 				WaitSomeTime wst(1000000000 / GetEncoderConfig().frameRate);
-				FrameQueueType* pQueue = NULL;
-				decltype(pQueue->PopUsedFrame())pFrame = NULL;
+				FrameQueueType* pQueue = nullptr;
+				decltype(pQueue->PopUsedFrame())pFrame = nullptr;
+				auto pFramePre = pFrame;
+				auto pFrameNext = pFrame;
 				uint8_t* yuv[3];
 				auto ec = GetEncoderConfig();
 				auto size = ec.width * ec.height;
@@ -33,6 +35,17 @@ public:
 					if (pQueue)
 					{
 						pFrame = pQueue->PopUsedFrame();
+						if (!pFrame)
+						{
+							pFrame = pFramePre;
+						}
+						else
+						{
+							if(pFramePre)
+								pQueue->PushEmptyFrame(pFramePre);
+							pFramePre = pFrame;
+						}
+
 						if (pFrame)
 						{
 							yuv[0] = pFrame->pData;
@@ -43,7 +56,6 @@ public:
 							{
 								m_pEncoder->ProcessInput(yuv, 0);
 							}
-							pQueue->PushEmptyFrame(pFrame);
 
 							wst.Wait();
 							continue;
@@ -51,6 +63,9 @@ public:
 					}
 					std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				}
+
+				if(pFramePre)
+					pQueue->PushEmptyFrame(pFramePre);
 			});
 
 		return CodeOK;

@@ -12,12 +12,26 @@ struct CaptureConfigure
 class ICaptureWoker
 {
 public:
-	virtual ~ICaptureWoker();
+	virtual ~ICaptureWoker()
+	{
+		m_bRunning = false;
+		if (m_threadWorker.joinable())
+		{
+			m_threadWorker.join();
+		}
+	}
 	virtual int Init() = 0;
 	virtual int Destroy() = 0;
 
-	virtual int SetVideoCaptureConfigure(CaptureConfigure);
-	virtual CaptureConfigure GetVideoCaptureConfigure()const;
+	virtual int SetVideoCaptureConfigure(CaptureConfigure vcc)
+	{
+		m_captureConf = vcc;
+		return S_OK;
+	}
+	virtual CaptureConfigure GetVideoCaptureConfigure() const
+	{
+		return m_captureConf;
+	}
 protected:
 	virtual int WorkLoop() = 0;
 	virtual int DoCapture() = 0;

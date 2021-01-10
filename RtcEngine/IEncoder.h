@@ -12,12 +12,25 @@ struct EncoderConfig
 class IEncoder
 {
 public:
-	virtual ~IEncoder();
+	virtual ~IEncoder()
+	{
+		m_bRunning = false;
+		if (m_threadWorker.joinable())
+		{
+			m_threadWorker.join();
+		}
+	}
 	virtual int Init() = 0;
 	virtual int Destroy() = 0;
 
-	virtual void SetEncoderConfig(EncoderConfig);
-	virtual EncoderConfig GetEncoderConfig();
+	virtual void SetEncoderConfig(EncoderConfig ec)
+	{
+		m_encoderConfig = ec;
+	}
+	virtual EncoderConfig GetEncoderConfig()
+	{
+		return m_encoderConfig;
+	}
 
 protected:
 	int m_bRunning = false;

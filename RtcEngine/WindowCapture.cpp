@@ -2,12 +2,6 @@
 #include "FrameQueue.h"
 #include "libyuv/libyuv.h"
 
-#ifdef  _DEBUG
-#pragma comment(lib, "./libyuv/yuvd.lib")
-#else
-#pragma comment(lib, "./libyuv/yuv.lib")
-#endif //  _DEBUG
-
 bool isWindows8Point1OrGreater()
 {
 	static bool *gsValue = NULL;

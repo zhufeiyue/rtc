@@ -15,19 +15,22 @@ X264Wrap::~X264Wrap()
 {
 }
 
-void X264Wrap::SetFrameSize(int w, int h, int fr)
+void X264Wrap::SetFrameSize(int w, int h, int fr, int ff)
 {
 	if (w < 1 || w % 2 != 0 ||
 		h < 1 || h % 2 != 0 ||
-		fr < 1 || fr > 100)
+		fr < 1 || fr > 100 ||
+		ff < X264_CSP_I400 || ff > X264_CSP_RGB)
 	{
-		LOG() << "x264 cannt take configure width " << w << " height " << h << " frame rate " << fr;
+		LOG() << "x264 cannt take configure width " << w << " height " << h <<
+			" frame rate " << fr << "frame format " << ff;
 		return;
 	}
 
 	m_iWidth = w;
 	m_iHeight = h;
 	m_iFrameRate = fr;
+	m_iFrameFormat = ff;
 }
 
 int X264Wrap::Init()
@@ -51,7 +54,7 @@ int X264Wrap::Init()
 
 	m_pParam->i_bframe = 0;
 	m_pParam->i_bitdepth = 8;
-	m_pParam->i_csp = X264_CSP_I420;
+	m_pParam->i_csp = m_iFrameFormat; //X264_CSP_I420;
 	m_pParam->i_width = m_iWidth;
 	m_pParam->i_height = m_iHeight;
 	m_pParam->b_vfr_input = 0; // 0 仅帧率用于码率控制，1 时间基和时间戳用于码率控制
@@ -72,7 +75,7 @@ int X264Wrap::Init()
 	//m_pParam->rc.i_bitrate = 600;
 
 	m_pParam->rc.i_rc_method = X264_RC_CRF;
-	m_pParam->rc.f_rf_constant = 30.0f;
+	m_pParam->rc.f_rf_constant = 28.0f;
 
 	x264_param_apply_fastfirstpass(m_pParam);
 	if (0 != x264_param_apply_profile(m_pParam, "baseline"))

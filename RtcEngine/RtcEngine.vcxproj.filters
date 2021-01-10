@@ -16,18 +16,15 @@
     <Filter Include="libdshowcapture">
       <UniqueIdentifier>{b5c0e77f-2c7e-4fe7-b955-49212806c11c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libyuv">
+      <UniqueIdentifier>{1e04cbf0-b47f-46c1-a5c5-ea256d2010ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ICaptureWorker.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="CaptureWindowWorker.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="IEncoder.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="H264Encoder.cpp">
@@ -92,6 +89,156 @@
     </ClCompile>
     <ClCompile Include="WindowCapture.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="wasapi.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\compare.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\compare_common.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\compare_gcc.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\compare_mmi.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\compare_msa.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\compare_neon.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\compare_neon64.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\compare_win.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert_argb.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert_from.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert_from_argb.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert_jpeg.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert_to_argb.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert_to_i420.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\cpu_id.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\mjpeg_decoder.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\mjpeg_validate.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\planar_functions.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate_any.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate_argb.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate_common.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate_gcc.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate_mmi.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate_msa.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate_neon.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate_neon64.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\rotate_win.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_any.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_common.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_gcc.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_mmi.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_msa.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_neon.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_neon64.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_win.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_any.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_argb.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_common.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_gcc.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_mmi.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_msa.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_neon.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_neon64.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_uv.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_win.cc">
+      <Filter>libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\video_common.cc">
+      <Filter>libyuv</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -171,6 +318,12 @@
       <Filter>libdshowcapture</Filter>
     </ClInclude>
     <ClInclude Include="WindowCapture.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="wasapi.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorspaceConvert.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
